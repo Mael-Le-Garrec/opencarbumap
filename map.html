@@ -1,0 +1,52 @@
+<html>
+<head>
+  <title>Carburants</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+
+  <link rel="stylesheet" href="./dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
+  <script src="./dist/leaflet.markercluster-src.js"></script>
+
+  <script src="carbus.js"></script>
+
+  <meta charset=utf-8>
+
+  <style>
+    #map{ width: 100%; height: 100%; }
+  </style>
+</head>
+
+<body>
+
+  <div id="map"></div>
+
+  <script type="text/javascript">
+
+   var tiles = L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}',
+        {
+          type: 'map',
+          attribution: '',
+          maxZoom: 19,
+          minZoom: 2,
+        }), latlng = L.latLng(46, 5.2);
+
+    var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
+
+    var markers = L.markerClusterGroup();
+    
+    for (var i = 0; i < addressPoints.length; i++) {
+      var a = addressPoints[i];
+      var title = a[2];
+      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
+      marker.bindPopup(title);
+      markers.addLayer(marker);
+    }
+
+    map.addLayer(markers);
+
+  </script>  
+  
+
+</body>
+</html>
