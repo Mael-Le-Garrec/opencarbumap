@@ -34,7 +34,7 @@
     var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
 
     var markers = L.markerClusterGroup();
-    var iconColors = ['black', 'blue', 'green', 'grey', 'orange', 'red', 'violet', 'yellow'];
+    var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'violet', 'grey', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
         icons[i] = L.icon({
@@ -49,8 +49,12 @@
     
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
+      if (a[3] == -1)
+        continue;
       var title = a[2];
-      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[i%8]});
+      var min = gazole['min']
+      var index = (a[3] - gazole['min']) * 8 / (gazole['max'] - gazole['min']);
+      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
       marker.bindPopup(title);
       markers.addLayer(marker);
     }
