@@ -32,7 +32,7 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     
     carburants = '<br>'.join([a + ' : ' + b for a,b in list(prices.items())])
 
-    if latitude and longitude:
+    if latitude and longitude and prices:
         output.write(template.format(latitude, longitude, ville, carburants))
 
 output.write('];\n')
