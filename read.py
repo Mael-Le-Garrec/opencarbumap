@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 base = "var addressPoints = ["
-template = "  [{}, {}, {}],"
+template = "  [{}, {}, \"{}<br>{}\"],\n"
 
 from lxml import etree
 import utm
@@ -17,29 +17,23 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     except:
         latitude, longitude = '', ''
 
-    print(latitude)
-    print(longitude)
-
     prices = {}
     ruptures = []
     ville = ''
     for child in pdv.getchildren():
         if child.tag == "prix":
-            prices[child.get('nom')] = child.get('valeur')
+            prices[child.get('nom')] = str(float(child.get('valeur')) / 1000)
         
         if child.tag == "rupture":
             ruptures.append(child.get('nom'))
 
         if child.tag == "ville":
             ville = child.text
-
-    #print('')
-    #print('Ville : ' + ville)
-    #print('  Carburants : ' + ', '.join([a + ' : ' + b for a,b in list(prices.items())]))
-    #print('    Ruptures : ' + ', '.join(ruptures))
+    
+    carburants = '<br>'.join([a + ' : ' + b for a,b in list(prices.items())])
 
     if latitude and longitude:
-        output.write(template.format(latitude, longitude, '') + '\n')
+        output.write(template.format(latitude, longitude, ville, carburants))
 
 output.write('];\n')
 output.close()
