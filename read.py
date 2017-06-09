@@ -2,7 +2,8 @@
 
 base = "var addressPoints = ["
 template = "  [{}, {}, \"{}\", {}, {}],\n"
-template_gazole = "var gazole = {{'min': {}, 'max': {}}}\n"
+template_fuel_begin = "var fuels = {"
+template_fuel = "\"{}\": {{'min': {}, 'max': {}}},\n"
 carbu_list = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
 from lxml import etree
@@ -44,8 +45,11 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         price_list.append(prices)
 output.write('];\n')
 
-gazoles = [x for price in price_list for y, x in price.items() if y == "Gazole"]
-output.write(template_gazole.format(min(gazoles), max(gazoles)))
-output.close()
+output.write(template_fuel_begin)
+for i in carbu_list:
+  tmp = [x for price in price_list for y, x in price.items() if y == i and float(x) > 0.01]
+  output.write(template_fuel.format(i, min(tmp), max(tmp)))
+output.write("};\n")
 
+output.close()
 

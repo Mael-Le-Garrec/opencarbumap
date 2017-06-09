@@ -46,8 +46,6 @@
     }
 
 
-  console.log(carbu_list);
-    
     var markers_array = [null, null, null, null, null, null];
     for (var i = 0; i < 6; i++) {
       var markers = L.markerClusterGroup({
@@ -59,24 +57,20 @@
       markers_array[i] = markers;
     }
 
-console.log(carbu_list);
-
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
-      if (a[9] == -1)
-        continue;
 
       var title = a[2];
-      var min = gazole['min']
-      var index = (a[9] - gazole['min']) * 8 / (gazole['max'] - gazole['min']);
 
 
       for (var j = 3; j < 9; j++) {
         if (a[j] == -1)
           continue;
-        
+        var fuel_name = carbu_list[j-3];
+        var index = (a[j] - fuels[fuel_name]['min']) * 8 / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
+
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
-        marker.bindPopup(title + '<br>' + carbu_list[j-3] + ": " + a[j]);
+        marker.bindPopup(title + '<br>' + fuel_name + ": " + a[j]);
         markers_array[j - 3].addLayer(marker);
       }
 
