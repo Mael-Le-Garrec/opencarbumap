@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import datetime
+
 base = "var addressPoints = ["
 template = "[{}, {}, \"{}\", {{{}}}],\n"
 template_fuel_begin = "var fuels = {"
@@ -14,6 +16,8 @@ output.write(base + '\n')
 
 tree = etree.parse("data.xml")
 price_list = []
+now = datetime.datetime.now()
+two_weeks = datetime.timedelta(14)
 for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     try:
         latitude = float(pdv.get('latitude')) / 100000
@@ -26,7 +30,8 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     ville = ''
     for child in pdv.getchildren():
         if child.tag == "prix":
-            prices[child.get('nom')] = str(float(child.get('valeur')) / 1000)
+            if datetime.datetime.strptime(child.get('maj'), "%Y-%m-%dT%H:%M:%S") + two_weeks > now:
+                prices[child.get('nom')] = str(float(child.get('valeur')) / 1000)
         
         if child.tag == "rupture":
             ruptures.append(child.get('nom'))
