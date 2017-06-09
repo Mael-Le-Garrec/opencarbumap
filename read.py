@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 base = "var addressPoints = ["
-template = "  [{}, {}, \"{}\", {}, {}],\n"
+template = "[{}, {}, \"{}\", {{{}}}],\n"
 template_fuel_begin = "var fuels = {"
 template_fuel = "\"{}\": {{'min': {}, 'max': {}}},\n"
 carbu_list = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
@@ -34,14 +34,14 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         if child.tag == "ville":
             ville = child.text
     
-    carburants = [str(-1)] * len(carbu_list)
-    for name, price in sorted(list(prices.items())):
-        carburants[carbu_list.index(name)] = price
+    carburants = []
+    for name, price in list(prices.items()):
+        carburants.append('"' + name + '":' + price)
 
-    carburants = ', '.join([price for price in carburants])
+    carburants = ', '.join(carburants)
 
     if latitude and longitude and prices:
-        output.write(template.format(latitude, longitude, ville, carburants, prices.get('Gazole', -1)))
+        output.write(template.format(latitude, longitude, ville, carburants))
         price_list.append(prices)
 output.write('];\n')
 

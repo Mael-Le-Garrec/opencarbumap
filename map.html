@@ -63,15 +63,16 @@
       var title = a[2];
 
 
-      for (var j = 3; j < 9; j++) {
-        if (a[j] == -1)
+      for (var j = 0; j < carbu_list.length; j++) {
+        var fuel_name = carbu_list[j];
+        var price = a[3][fuel_name];
+        if (price == undefined)
           continue;
-        var fuel_name = carbu_list[j-3];
-        var index = (a[j] - fuels[fuel_name]['min']) * 8 / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
+        var index = (price - fuels[fuel_name]['min']) * 8 / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
-        marker.bindPopup(title + '<br>' + fuel_name + ": " + a[j]);
-        markers_array[j - 3].addLayer(marker);
+        marker.bindPopup(title + '<br>' + fuel_name + ": " + price);
+        markers_array[j].addLayer(marker);
       }
 
     }
