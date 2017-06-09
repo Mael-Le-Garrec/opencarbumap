@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 base = "var addressPoints = ["
-template = "  [{}, {}, \"{}<br>{}\", {}],\n"
+template = "  [{}, {}, \"{}\", {}, {}],\n"
 template_gazole = "var gazole = {{'min': {}, 'max': {}}}\n"
+carbu_list = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
 from lxml import etree
 import utm
@@ -32,7 +33,11 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         if child.tag == "ville":
             ville = child.text
     
-    carburants = '<br>'.join([a + ' : ' + b for a,b in list(prices.items())])
+    carburants = [str(-1)] * len(carbu_list)
+    for name, price in sorted(list(prices.items())):
+        carburants[carbu_list.index(name)] = price
+
+    carburants = ', '.join([price for price in carburants])
 
     if latitude and longitude and prices:
         output.write(template.format(latitude, longitude, ville, carburants, prices.get('Gazole', -1)))

@@ -33,12 +33,7 @@
 
     var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
 
-    var markers = L.markerClusterGroup({
-      showCoverageOnHover : false,
-      removeOutsideVisibleBounds: true,
-      disableClusteringAtZoom: 14,
-      maxClusterRadius: 60
-    });
+    var carbu_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'violet', 'grey', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
@@ -51,21 +46,47 @@
             shadowSize: [41, 41]
         });
     }
+
+
+  console.log(carbu_list);
     
-    for (var i = 0; i < addressPoints.length; i++) {
-      var a = addressPoints[i];
-      if (a[3] == -1)
-        continue;
-      var title = a[2];
-      var min = gazole['min']
-      var index = (a[3] - gazole['min']) * 8 / (gazole['max'] - gazole['min']);
-      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
-      marker.bindPopup(title);
-      markers.addLayer(marker);
+    var markers_array = [null, null, null, null, null, null];
+    for (var i = 0; i < 6; i++) {
+      var markers = L.markerClusterGroup({
+        showCoverageOnHover : false,
+        removeOutsideVisibleBounds: true,
+        disableClusteringAtZoom: 14,
+        maxClusterRadius: 60
+      });
+      markers_array[i] = markers;
     }
 
-    map.addLayer(markers);
+console.log(carbu_list);
 
+    for (var i = 0; i < addressPoints.length; i++) {
+      var a = addressPoints[i];
+      if (a[9] == -1)
+        continue;
+
+      var title = a[2];
+      var min = gazole['min']
+      var index = (a[9] - gazole['min']) * 8 / (gazole['max'] - gazole['min']);
+
+
+      for (var j = 3; j < 9; j++) {
+        if (a[j] == -1)
+          continue;
+        
+        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
+        marker.bindPopup(title + '<br>' + carbu_list[j-3] + ": " + a[j]);
+        markers_array[j - 3].addLayer(marker);
+      }
+
+    }
+      
+    console.log(markers_array);
+    map.addLayer(markers_array[3]);
+      
   </script>  
   
 
