@@ -34,11 +34,23 @@
     var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
 
     var markers = L.markerClusterGroup();
+    var iconColors = ['black', 'blue', 'green', 'grey', 'orange', 'red', 'violet', 'yellow'];
+    var icons = {};
+    for (var i = 0; i < iconColors.length; i++) {
+        icons[i] = L.icon({
+            iconUrl: './images/marker-icon-'+iconColors[i]+'.png',
+            shadowUrl: './images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+    }
     
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
       var title = a[2];
-      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
+      var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[i%8]});
       marker.bindPopup(title);
       markers.addLayer(marker);
     }
