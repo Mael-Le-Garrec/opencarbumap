@@ -83,9 +83,16 @@ console.log(carbu_list);
       }
 
     }
+    var overlayMaps = {
+          "E10": markers_array[0],
+          "E85": markers_array[1],
+          "GPLc": markers_array[2],    
+          "Gazole": markers_array[3],    
+          "SP95": markers_array[4],    
+          "SP98": markers_array[5],    
+    };
       
-    console.log(markers_array);
-    map.addLayer(markers_array[3]);
+    L.control.layers(overlayMaps).addTo(map);
       
   </script>  
   
