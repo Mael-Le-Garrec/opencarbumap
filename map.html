@@ -31,8 +31,6 @@
           minZoom: 2,
         }), latlng = L.latLng(46, 5.2);
 
-    var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
-
     var carbu_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'violet', 'grey', 'black'];
     var icons = {};
@@ -91,6 +89,13 @@ console.log(carbu_list);
           "SP95": markers_array[4],    
           "SP98": markers_array[5],    
     };
+    
+    var map = L.map('map', {
+        center: latlng, 
+        zoom: 6, 
+        layers: [tiles, markers_array[3]]
+    });
+
       
     L.control.layers(overlayMaps).addTo(map);
       
