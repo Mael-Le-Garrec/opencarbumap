@@ -75,7 +75,7 @@
         }
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
-        marker.bindPopup(title + '<br>' + fuel_name + ": " + price);
+        marker.bindPopup(title + '<br>' + fuel_name + ": " + price.toFixed(3));
         overlayMaps[fuel_name].addLayer(marker);
       }
 
