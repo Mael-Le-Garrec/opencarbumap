@@ -69,6 +69,10 @@
         if (price == undefined)
           continue;
         var index = (price - fuels[fuel_name]['min']) * 8 / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
+        /* Sometimes rounding screw us */
+        if (index > 7) {
+          index = 7;
+        }
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
         marker.bindPopup(title + '<br>' + fuel_name + ": " + price);
