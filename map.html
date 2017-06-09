@@ -33,7 +33,12 @@
 
     var map = L.map('map', {center: latlng, zoom: 6, layers: [tiles]});
 
-    var markers = L.markerClusterGroup();
+    var markers = L.markerClusterGroup({
+      showCoverageOnHover : false,
+      removeOutsideVisibleBounds: true,
+      disableClusteringAtZoom: 14,
+      maxClusterRadius: 60
+    });
     
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
