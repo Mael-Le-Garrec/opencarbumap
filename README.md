@@ -13,3 +13,13 @@ This project use the daily (*jour*) file.
 python read.py
 firefox map.html
 ```
+
+## Regular data download
+
+Government's database is updated everyday at 5am. Thus, data can be downloaded
+safely at 5:30am each day:
+
+```
+echo "30 5    * * *   hatrix  cd /path/to/dir/ && sh download_data.sh" >> /etc/crontab
+```
+
