@@ -32,7 +32,7 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
             ruptures.append(child.get('nom'))
 
         if child.tag == "ville":
-            ville = child.text
+            ville = child.text.title()
     
     carburants = [str(-1)] * len(carbu_list)
     for name, price in sorted(list(prices.items())):
