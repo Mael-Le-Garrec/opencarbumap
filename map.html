@@ -32,7 +32,7 @@
           minZoom: 2,
         }), latlng = L.latLng(46, 5.2);
 
-    var carbu_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
+    var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'violet', 'grey', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
@@ -47,25 +47,24 @@
     }
 
 
-    var markers_array = [null, null, null, null, null, null];
-    for (var i = 0; i < 6; i++) {
+    // Initialize Layers for each fuel
+    var overlayMaps = {};
+    for (var i = 0; i < fuel_list.length; i++) {
       var markers = L.markerClusterGroup({
         showCoverageOnHover : false,
         removeOutsideVisibleBounds: true,
         disableClusteringAtZoom: 14,
         maxClusterRadius: 60
       });
-      markers_array[i] = markers;
+      overlayMaps[fuel_list[i]] = markers;
     }
 
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
-
       var title = a[2];
 
-
-      for (var j = 0; j < carbu_list.length; j++) {
-        var fuel_name = carbu_list[j];
+      for (var j = 0; j < fuel_list.length; j++) {
+        var fuel_name = fuel_list[j];
         var price = a[3][fuel_name];
         if (price == undefined)
           continue;
@@ -77,23 +76,15 @@
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
         marker.bindPopup(title + '<br>' + fuel_name + ": " + price);
-        markers_array[j].addLayer(marker);
+        overlayMaps[fuel_name].addLayer(marker);
       }
 
     }
-    var overlayMaps = {
-          "E10": markers_array[0],
-          "E85": markers_array[1],
-          "GPLc": markers_array[2],    
-          "Gazole": markers_array[3],    
-          "SP95": markers_array[4],    
-          "SP98": markers_array[5],    
-    };
     
     var map = L.map('map', {
         center: latlng, 
         zoom: 6, 
-        layers: [tiles, markers_array[3]]
+        layers: [tiles, overlayMaps["Gazole"]]
     });
 
       
