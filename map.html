@@ -68,10 +68,10 @@
         var price = a[3][fuel_name];
         if (price == undefined)
           continue;
-        var index = (price - fuels[fuel_name]['min']) * 8 / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
+        var index = (price - fuels[fuel_name]['min']) * iconColors.length / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
         /* Sometimes rounding screw us */
-        if (index > 7) {
-          index = 7;
+        if (index > iconColors.length-1) {
+          index = iconColors.length-1;
         }
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
