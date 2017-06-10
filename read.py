@@ -32,13 +32,13 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         if child.tag == "prix":
             if datetime.datetime.strptime(child.get('maj'), "%Y-%m-%dT%H:%M:%S") + two_weeks > now:
                 prices[child.get('nom')] = str(float(child.get('valeur')) / 1000)
-        
+
         if child.tag == "rupture":
             ruptures.append(child.get('nom'))
 
         if child.tag == "ville":
             ville = child.text.title()
-    
+
     carburants = []
     for name, price in list(prices.items()):
         carburants.append('"' + name + '":' + price)
