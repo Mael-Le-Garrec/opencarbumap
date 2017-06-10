@@ -6,6 +6,10 @@ There is one layer per fuel.
 Data come from french government open data: https://www.prix-carburants.gouv.fr/rubrique/opendata/.
 This project use the daily (*jour*) file.
 
+## Example map
+
+Here is an example map: http://hatrix.fr/opencarbumap/map.html
+
 ## Install
 
 ```bash
