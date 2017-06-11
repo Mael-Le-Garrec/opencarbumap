@@ -31,7 +31,9 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     for child in pdv.getchildren():
         if child.tag == "prix":
             if datetime.datetime.strptime(child.get('maj'), "%Y-%m-%dT%H:%M:%S") + two_weeks > now:
-                prices[child.get('nom')] = str(float(child.get('valeur')) / 1000)
+                price = float(child.get('valeur')) / 1000
+                if price > 0.10:
+                    prices[child.get('nom')] = str(price)
 
         if child.tag == "rupture":
             ruptures.append(child.get('nom'))
@@ -52,7 +54,7 @@ output.write('];\n')
 
 output.write(template_fuel_begin)
 for i in carbu_list:
-  tmp = [x for price in price_list for y, x in price.items() if y == i and float(x) > 0.01]
+  tmp = [x for price in price_list for y, x in price.items() if y == i]
   output.write(template_fuel.format(i, min(tmp), max(tmp)))
 output.write("};\n")
 
