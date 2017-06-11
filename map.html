@@ -61,21 +61,24 @@
 
     for (var i = 0; i < addressPoints.length; i++) {
       var a = addressPoints[i];
-      var title = a[2];
+      var city = a[2];
+      var prices = a[3];
+      var title = city;
 
-      for (var j = 0; j < fuel_list.length; j++) {
-        var fuel_name = fuel_list[j];
+      for (var j in a[3]) {
+        title = title + '<br>' + j + ": " + a[3][j].toFixed(3) + " €/Litre";
+      }
+
+      for (var fuel_name in a[3]) {
         var price = a[3][fuel_name];
-        if (price == undefined)
-          continue;
         var index = (price - fuels[fuel_name]['min']) * iconColors.length / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
         /* Sometimes rounding screw us */
         if (index > iconColors.length-1) {
           index = iconColors.length-1;
         }
 
-        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title, icon: icons[Math.floor(index)]});
-        marker.bindPopup(title + '<br>' + fuel_name + ": " + price.toFixed(3) + " €/Litre");
+        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: city, icon: icons[Math.floor(index)]});
+        marker.bindPopup(title);
         overlayMaps[fuel_name].addLayer(marker);
       }
 
