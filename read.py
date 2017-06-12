@@ -164,7 +164,7 @@ def parse_xml(filename):
 
         if latitude and longitude and prices:
             output.write_marker(latitude, longitude, city, fuels)
-            points.add_point((latitude, longitude), pdv_id)
+            #points.add_point((latitude, longitude), pdv_id)
             price_list.append(prices)
 
     output.close_markers()
