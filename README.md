@@ -24,6 +24,6 @@ Government's database is updated everyday at 5am. Thus, data can be downloaded
 safely at 5:30am each day:
 
 ```
-echo "30 5    * * *   hatrix  cd /path/to/dir/ && sh download_data.sh" >> /etc/crontab
+echo "30 5    * * *   hatrix  cd /path/to/dir/ && sh download_data.sh && python read.py" >> /etc/crontab
 ```
 
