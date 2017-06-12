@@ -1,32 +1,68 @@
 #!/usr/bin/env python3
 
-import datetime
-
-base = "var addressPoints = ["
-template = "[{}, {}, \"{}\", {{{}}}],\n"
-template_fuel_begin = "var fuels = {"
-template_fuel = "\"{}\": {{'min': {}, 'max': {}}},\n"
-carbu_list = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
-
+from datetime import datetime, timedelta
 from lxml import etree
 import utm
 
-output = open('carbus.js', 'w')
-output.write(base + '\n')
+class Data():
+    fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
-tree = etree.parse("data.xml")
-price_list = []
-now = datetime.datetime.now()
-two_weeks = datetime.timedelta(14)
-for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
+
+class Templates():
+    base = "var addressPoints = ["
+    marker = "[{}, {}, \"{}\", {{{}}}],\n"
+    fuel_begin = "var fuels = {"
+    fuel = "\"{}\": {{'min': {}, 'max': {}}},\n"
+
+
+class JsData():
+    marker_begin = False
+
+    def __init__(self, filename="carbus.js"):
+        self.filename = filename
+        self.file = open(filename, 'w')
+        
+
+    def write_base(self):
+        self.marker_begin = True
+        self.file.write(Templates.base + '\n')
+
+
+    def write_marker(self, latitude, longitude, city, fuel):
+        if not self.marker_begin:
+            self.write_base()
+
+        text = Templates.marker.format(latitude, longitude, city, fuel)
+        self.file.write(text)
+
+
+    def close_markers(self):
+        self.file.write('];\n')
+
+
+    def write_fuels(self, price_list):
+        self.file.write(Templates.fuel_begin)
+
+        for i in Data.fuel_names:
+          tmp = [x for price in price_list for y, x in price.items() if y == i]
+          self.file.write(Templates.fuel.format(i, min(tmp), max(tmp)))
+
+        self.file.write("};\n")
+
+
+    def close(self):
+        self.file.close()
+
+
+def get_coords(pdv):
     try:
         latitude = float(pdv.get('latitude'))
         longitude = float(pdv.get('longitude'))
+
         # sometimes latitude and longitude are switch
         if latitude < longitude:
-          tmp = latitude
-          latitude = longitude
-          longitude = tmp
+          latitude, longitude = longitude, latitude
+
         # sometimes coordinate are already in WGS84
         if latitude > 100 or latitude < -100:
           latitude = latitude / 100000
@@ -34,38 +70,65 @@ for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     except:
         latitude, longitude = '', ''
 
+    return latitude, longitude
+
+
+def check_price(prices, node):
+    two_weeks = timedelta(14)
+    now = datetime.now()
+    pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%dT%H:%M:%S")
+    
+    if pdv_date + two_weeks > now:
+        price = float(node.get('valeur')) / 1000
+        if price > 0.10:
+            prices[node.get('nom')] = str(price)
+
+
+def get_children(pdv):
     prices = {}
-    ruptures = []
-    ville = ''
+    sold_out = []
+    city = ''
+
     for child in pdv.getchildren():
         if child.tag == "prix":
-            if datetime.datetime.strptime(child.get('maj'), "%Y-%m-%dT%H:%M:%S") + two_weeks > now:
-                price = float(child.get('valeur')) / 1000
-                if price > 0.10:
-                    prices[child.get('nom')] = str(price)
+            check_price(prices, child)
 
         if child.tag == "rupture":
-            ruptures.append(child.get('nom'))
+            sold_out.append(child.get('nom'))
 
         if child.tag == "ville":
-            ville = child.text.title()
+            city = child.text.title()
 
-    carburants = []
+    return prices, city, sold_out
+
+def fuels_prices(prices):
+    fuels = []
     for name, price in list(prices.items()):
-        carburants.append('"' + name + '":' + price)
+        fuels.append('"' + name + '":' + price)
 
-    carburants = ', '.join(carburants)
+    fuels = ', '.join(fuels)
 
-    if latitude and longitude and prices:
-        output.write(template.format(latitude, longitude, ville, carburants))
-        price_list.append(prices)
-output.write('];\n')
+    return fuels
 
-output.write(template_fuel_begin)
-for i in carbu_list:
-  tmp = [x for price in price_list for y, x in price.items() if y == i]
-  output.write(template_fuel.format(i, min(tmp), max(tmp)))
-output.write("};\n")
+def parse_xml(filename):
+    output = JsData()
 
-output.close()
+    tree = etree.parse(filename)
+    price_list = []
 
+    for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
+        latitude, longitude = get_coords(pdv)
+        prices, city, sold_out = get_children(pdv)
+        fuels = fuels_prices(prices)
+
+        if latitude and longitude and prices:
+            output.write_marker(latitude, longitude, city, fuels)
+            price_list.append(prices)
+
+    output.close_markers()
+    output.write_fuels(price_list)
+    output.close()
+
+
+if __name__ == "__main__":
+    parse_xml("data.xml")
