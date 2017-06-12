@@ -14,7 +14,7 @@ Here is an example map: http://hatrix.fr/opencarbumap/map.html
 
 ```bash
 ./download_data.sh
-python read.py
+python3 read.py
 firefox map.html
 ```
 
@@ -24,6 +24,6 @@ Government's database is updated everyday at 5am. Thus, data can be downloaded
 safely at 5:30am each day:
 
 ```
-echo "30 5    * * *   hatrix  cd /path/to/dir/ && sh download_data.sh && python read.py" >> /etc/crontab
+echo "30 5    * * *   hatrix  cd /path/to/dir/ && sh download_data.sh && python3 read.py" >> /etc/crontab
 ```
 
