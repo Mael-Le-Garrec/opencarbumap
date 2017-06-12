@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from shapely.geometry import shape, Point
 from datetime import datetime, timedelta
 from lxml import etree
+import json
+
 import utm
 
 class Data():
@@ -73,6 +76,10 @@ def get_coords(pdv):
     return latitude, longitude
 
 
+def get_id(pdv):
+    return pdv.get('id')
+
+
 def check_price(prices, node):
     two_weeks = timedelta(14)
     now = datetime.now()
@@ -110,24 +117,61 @@ def fuels_prices(prices):
 
     return fuels
 
+
+class Points():
+
+    class Coords():
+        def __init__(self, point, pdv_id):
+            self.point = point
+            self.pdv_id = pdv_id
+
+    coords = []
+
+    def __init__(self, filename='departements.json'):
+        self.filename = filename
+        self.open_data()
+
+
+    def open_data(self):
+        self.data = open(self.filename)
+        self.data = json.load(self.data)[0]
+
+
+    def add_point(self, point, pdv_id):
+        self.coords.append(self.Coords(Point(*point), pdv_id))
+
+
+    def get_averages(self):
+        # check each polygon to see if it contains the point
+        for i, feature in enumerate(self.data['features']):
+            for coord in self.coords:
+                polygon = shape(feature['geometry'])
+                if polygon.contains(coord.point):
+                    print('Point {} is inside {}'.format(coord.point, feature))
+
 def parse_xml(filename):
     output = JsData()
+    points = Points()
 
     tree = etree.parse(filename)
     price_list = []
 
     for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         latitude, longitude = get_coords(pdv)
+        pdv_id = get_id(pdv)
         prices, city, sold_out = get_children(pdv)
         fuels = fuels_prices(prices)
 
         if latitude and longitude and prices:
             output.write_marker(latitude, longitude, city, fuels)
+            points.add_point((latitude, longitude), pdv_id)
             price_list.append(prices)
 
     output.close_markers()
     output.write_fuels(price_list)
     output.close()
+
+    points.get_averages()
 
 
 if __name__ == "__main__":
