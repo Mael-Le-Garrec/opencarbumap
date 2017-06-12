@@ -20,8 +20,17 @@ now = datetime.datetime.now()
 two_weeks = datetime.timedelta(14)
 for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
     try:
-        latitude = float(pdv.get('latitude')) / 100000
-        longitude = float(pdv.get('longitude')) / 100000
+        latitude = float(pdv.get('latitude'))
+        longitude = float(pdv.get('longitude'))
+        # sometimes latitude and longitude are switch
+        if latitude < longitude:
+          tmp = latitude
+          latitude = longitude
+          longitude = tmp
+        # sometimes coordinate are already in WGS84
+        if latitude > 100 or latitude < -100:
+          latitude = latitude / 100000
+          longitude = longitude / 100000
     except:
         latitude, longitude = '', ''
 
