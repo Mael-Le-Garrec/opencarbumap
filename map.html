@@ -6,7 +6,9 @@
 
   <link rel="stylesheet" href="./dist/MarkerCluster.css" />
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="./dist/Control.Geocoder.css" />
   <script src="./dist/leaflet.markercluster-src.js"></script>
+  <script src="./dist/Control.Geocoder.js"></script>
 
   <script src="carbus.js"></script>
 
@@ -92,6 +94,17 @@
 
 
     L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
+    L.Control.geocoder({'position':'topleft', 'defaultMarkGeocode':false})
+    .on('markgeocode', function(e) {
+        var bbox = e.geocode.bbox;
+        var poly = L.polygon([
+             bbox.getSouthEast(),
+             bbox.getNorthEast(),
+             bbox.getNorthWest(),
+             bbox.getSouthWest()
+        ]).addTo(map);
+        map.fitBounds(poly.getBounds());
+    }).addTo(map);
 
   </script>
 
