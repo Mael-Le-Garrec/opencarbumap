@@ -10,47 +10,28 @@ import utm
 class Data():
     fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
-
-class Templates():
-    base = "var addressPoints = ["
-    marker = "[{}, {}, \"{}\", {{{}}}],\n"
-    fuel_begin = "var fuels = {"
-    fuel = "\"{}\": {{'min': {}, 'max': {}}},\n"
-
-
 class JsData():
-    marker_begin = False
-
     def __init__(self, filename="carbus.js"):
         self.filename = filename
         self.file = open(filename, 'w')
         
-
-    def write_base(self):
-        self.marker_begin = True
-        self.file.write(Templates.base + '\n')
-
-
-    def write_marker(self, latitude, longitude, city, fuel):
-        if not self.marker_begin:
-            self.write_base()
-
-        text = Templates.marker.format(latitude, longitude, city, fuel)
+    def write_markers(self, addressPoints):
+        self.file.write("var addressPoints = ")
+        text = json.dumps(addressPoints, indent=2)
         self.file.write(text)
-
-
-    def close_markers(self):
-        self.file.write('];\n')
-
+        self.file.write(";\n")
 
     def write_fuels(self, price_list):
-        self.file.write(Templates.fuel_begin)
+        self.file.write("var fuels = ")
+        fuels = {}
 
         for i in Data.fuel_names:
           tmp = [x for price in price_list for y, x in price.items() if y == i]
-          self.file.write(Templates.fuel.format(i, min(tmp), max(tmp)))
+          fuels[i] = {'min': min(tmp), 'max': max(tmp)}
 
-        self.file.write("};\n")
+        self.file.write(json.dumps(fuels, indent=2))
+
+        self.file.write(";\n")
 
 
     def close(self):
@@ -88,7 +69,7 @@ def check_price(prices, node):
     if pdv_date + two_weeks > now:
         price = float(node.get('valeur')) / 1000
         if price > 0.10:
-            prices[node.get('nom')] = str(price)
+            prices[node.get('nom')] = price
 
 
 def get_children(pdv):
@@ -107,16 +88,6 @@ def get_children(pdv):
             city = child.text.title()
 
     return prices, city, sold_out
-
-def fuels_prices(prices):
-    fuels = []
-    for name, price in list(prices.items()):
-        fuels.append('"' + name + '":' + price)
-
-    fuels = ', '.join(fuels)
-
-    return fuels
-
 
 class Points():
 
@@ -154,20 +125,24 @@ def parse_xml(filename):
     points = Points()
 
     tree = etree.parse(filename)
+    addressPoints = []
     price_list = []
 
     for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
+        addressPoint = []
         latitude, longitude = get_coords(pdv)
         pdv_id = get_id(pdv)
-        prices, city, sold_out = get_children(pdv)
-        fuels = fuels_prices(prices)
+        fuels, city, sold_out = get_children(pdv)
 
-        if latitude and longitude and prices:
-            output.write_marker(latitude, longitude, city, fuels)
-            #points.add_point((latitude, longitude), pdv_id)
-            price_list.append(prices)
+        if latitude and longitude and fuels:
+            addressPoint.append(latitude)
+            addressPoint.append(longitude)
+            addressPoint.append(city)
+            addressPoint.append(fuels)
+            addressPoints.append(addressPoint)
+            price_list.append(fuels)
 
-    output.close_markers()
+    output.write_markers(addressPoints)
     output.write_fuels(price_list)
     output.close()
 
