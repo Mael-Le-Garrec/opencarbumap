@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+import os.path
 from shapely.geometry import shape, Point
 from datetime import datetime, timedelta
 from lxml import etree
@@ -11,32 +13,29 @@ class Data():
     fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
 class JsData():
-    def __init__(self, filename="carbus.js"):
-        self.filename = filename
-        self.file = open(filename, 'w')
+    def __init__(self):
+        self.directory = "json"
+        if not os.path.exists(self.directory):
+            os.mkdir(self.directory)
         
     def write_markers(self, addressPoints):
-        self.file.write("var addressPoints = ")
+        handle = open(os.path.join(self.directory, "address_points.js"), "w")
+        handle.write("var addressPoints = ")
         text = json.dumps(addressPoints, indent=2)
-        self.file.write(text)
-        self.file.write(";\n")
+        handle.write(text)
+        handle.close()
 
     def write_fuels(self, price_list):
-        self.file.write("var fuels = ")
+        handle = open(os.path.join(self.directory, "fuels.js"), "w")
+        handle.write("var fuels = ")
         fuels = {}
 
         for i in Data.fuel_names:
           tmp = [x for price in price_list for y, x in price.items() if y == i]
           fuels[i] = {'min': min(tmp), 'max': max(tmp)}
 
-        self.file.write(json.dumps(fuels, indent=2))
-
-        self.file.write(";\n")
-
-
-    def close(self):
-        self.file.close()
-
+        handle.write(json.dumps(fuels, indent=2))
+        handle.close()
 
 def get_coords(pdv):
     try:
@@ -144,7 +143,6 @@ def parse_xml(filename):
 
     output.write_markers(addressPoints)
     output.write_fuels(price_list)
-    output.close()
 
     points.get_averages()
 
