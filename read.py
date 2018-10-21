@@ -85,7 +85,7 @@ def get_children(pdv):
             sold_out.append(child.get('nom'))
 
         if child.tag == "ville":
-            city = child.text.title()
+            city = child.text.title() if child.text else None # Sometimes ville is empty
 
     return prices, city, sold_out
 
