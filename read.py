@@ -66,9 +66,8 @@ def check_price(prices, node):
     pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%dT%H:%M:%S")
     
     if pdv_date + two_weeks > now:
-        if node.get('valeur') == '1000': break
         price = float(node.get('valeur')) / 1000
-        if price > 0.10:
+        if node.get('valeur') != '1000' and price > 0.10:
             prices[node.get('nom')] = price
 
 
