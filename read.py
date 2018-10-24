@@ -20,8 +20,8 @@ class JsData():
         
     def write_markers(self, addressPoints):
         handle = open(os.path.join(self.directory, "address_points.js"), "w")
-        handle.write("var addressPoints = ")
-        text = json.dumps(addressPoints, indent=2)
+        handle.write("var addressPoints=")
+        text = json.dumps(addressPoints, separators=(',', ':'))
         handle.write(text)
         handle.close()
 
@@ -34,7 +34,7 @@ class JsData():
           tmp = [x for price in price_list for y, x in price.items() if y == i]
           fuels[i] = {'min': min(tmp), 'max': max(tmp)}
 
-        handle.write(json.dumps(fuels, indent=2))
+        handle.write(json.dumps(fuels, separators=(',', ':')))
         handle.close()
 
 def get_coords(pdv):
