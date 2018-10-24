@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import os.path
 from shapely.geometry import shape, Point
 from datetime import datetime, timedelta
 from lxml import etree
 import json
+import numpy as np
+import logging
 
 import utm
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Data():
     fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
@@ -141,11 +146,48 @@ def parse_xml(filename):
             addressPoints.append(addressPoint)
             price_list.append(fuels)
 
+    reject_outliers_prices(addressPoints)
+
     output.write_markers(addressPoints)
     output.write_fuels(price_list)
 
     points.get_averages()
 
+def reject_outliers_prices(addressPoints, reject_factor=10):
+    """ Filter outliers price from addressPoints using standard
+        deviation and mean.
+
+        reject condition: abs(price - mean) > reject_factor * std
+
+        :param addressPoints: address point list
+        :param reject_factor: used in reject condition
+    """
+    # extract all fuel price by fuel Id in a dict like
+    # {'E10': [1.604, 1.602, ...], ...}
+    fuelPrices = {}
+    for address in addressPoints:
+        for fuelId, price in address[3].iteritems():
+            if not fuelId in fuelPrices:
+                fuelPrices[fuelId] = [price]  # first entry
+            else:
+                fuelPrices[fuelId].append(price)
+
+    # compute mean and standard deviation for all fuel Id
+    fuelMeanStd = {}
+    for fuelId, prices in fuelPrices.iteritems():
+        fuelMeanStd[fuelId] = {
+            'mean': np.mean(prices),
+            'std': np.std(prices)
+        }
+
+    # now we can filter previous result
+    for address in addressPoints:
+        for fuelId in address[3].keys():
+            if abs(address[3][fuelId] - fuelMeanStd[fuelId]['mean']) > reject_factor * fuelMeanStd[fuelId]['std']:
+                logging.info('rejecting fuel price: %s=%f (mean=%f, std=%f)', fuelId,
+                             address[3][fuelId], fuelMeanStd[fuelId]['mean'], fuelMeanStd[fuelId]['std'])
+                # remove the entry
+                del address[3][fuelId]
 
 if __name__ == "__main__":
     parse_xml("data.xml")
