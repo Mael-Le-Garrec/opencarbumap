@@ -166,15 +166,15 @@ def reject_outliers_prices(addressPoints, reject_factor=10):
     # {'E10': [1.604, 1.602, ...], ...}
     fuelPrices = {}
     for address in addressPoints:
-        for fuelId, price in address[3].iteritems():
+        for fuelId, price in iter(address[3].items()):
             if not fuelId in fuelPrices:
-                fuelPrices[fuelId] = [price]  # first entry
+                fuelPrices[fuelId] = [price] # first entry
             else:
                 fuelPrices[fuelId].append(price)
 
     # compute mean and standard deviation for all fuel Id
     fuelMeanStd = {}
-    for fuelId, prices in fuelPrices.iteritems():
+    for fuelId, prices in iter(fuelPrices.items()):
         fuelMeanStd[fuelId] = {
             'mean': np.mean(prices),
             'std': np.std(prices)
@@ -182,7 +182,7 @@ def reject_outliers_prices(addressPoints, reject_factor=10):
 
     # now we can filter previous result
     for address in addressPoints:
-        for fuelId in address[3].keys():
+        for fuelId in list(address[3]):
             if abs(address[3][fuelId] - fuelMeanStd[fuelId]['mean']) > reject_factor * fuelMeanStd[fuelId]['std']:
                 logging.info('rejecting fuel price: %s=%f (mean=%f, std=%f)', fuelId,
                              address[3][fuelId], fuelMeanStd[fuelId]['mean'], fuelMeanStd[fuelId]['std'])
