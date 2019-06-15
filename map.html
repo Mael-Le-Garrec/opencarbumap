@@ -7,9 +7,7 @@
 
   <link rel="stylesheet" href="./dist/MarkerCluster.css" />
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
-  <link rel="stylesheet" href="./dist/Control.Geocoder.css" />
   <script src="./dist/leaflet.markercluster-src.js"></script>
-  <script src="./dist/Control.Geocoder.js"></script>
 
   <script src="./json/address_points.js"></script>
   <script src="./json/fuels.js"></script>
@@ -55,7 +53,6 @@
     var overlayMaps = {};
     for (var i = 0; i < fuel_list.length; i++) {
       var markers = L.markerClusterGroup({
-        showCoverageOnHover : false,
         removeOutsideVisibleBounds: true,
         disableClusteringAtZoom: 11,
         maxClusterRadius: 60
@@ -93,7 +90,6 @@
 
 
     L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
-    L.Control.geocoder({'position':'topleft', 'defaultMarkGeocode':false}).addTo(map);
     L.control.scale().addTo(map);
 
   </script>
