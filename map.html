@@ -4,13 +4,13 @@
   <title>Carburants</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.10.3/math.min.js"></script>
 
   <link rel="stylesheet" href="./dist/MarkerCluster.css" />
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
   <script src="./dist/leaflet.markercluster-src.js"></script>
 
   <script src="./json/address_points.js"></script>
-  <script src="./json/fuels.js"></script>
 
   <meta charset=utf-8>
 
@@ -26,10 +26,10 @@
 
   <script type="text/javascript">
 
+   var dynamic = false;
    var tiles = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
         {
           type: 'map',
-          attribution: '',
           maxZoom: 19,
           minZoom: 2,
         }), latlng = L.latLng(46, 5.2);
@@ -48,7 +48,6 @@
         });
     }
 
-
     // Initialize Layers for each fuel
     var overlayMaps = {};
     for (var i = 0; i < fuel_list.length; i++) {
@@ -64,7 +63,6 @@
       var a = addressPoints[i];
       var city = a[2];
       var prices = a[3];
-      var quantiles = a[4];
       var title = city;
 
       for (var j in a[3]) {
@@ -73,11 +71,11 @@
 
       for (var fuel_name in a[3]) {
         var price = a[3][fuel_name];
-        var index = a[4][fuel_name];
 
-        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: city, icon: icons[Math.floor(index)]});
+        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: city, icon: icons[0]});
         marker.bindPopup(title);
         overlayMaps[fuel_name].addLayer(marker);
+        marker.prices = prices;
       }
 
     }
@@ -88,9 +86,67 @@
         layers: [tiles, overlayMaps["Gazole"]]
     });
 
+    map.on('moveend overlayadd', function(e) {
+        var overlay_name = "";
+        for (var name in overlayMaps) {
+            if (map.hasLayer(overlayMaps[name])) {
+                overlay_name = name;
+                break;
+            }
+        }
+
+        var visibleMarkers = [];
+        var bounds = map.getBounds()
+        overlayMaps[overlay_name].eachLayer(function(marker) {
+            if (!dynamic || bounds.contains(marker.getLatLng())) {
+                visibleMarkers.push(marker);
+            }
+        });
+        
+        var prices = [];
+        for (var marker of visibleMarkers) {
+            prices.push(marker.prices[overlay_name]);
+        }
+
+        var quantiles = math.quantileSeq(prices, [...[...Array(5).keys()].map(x => (x+1) / 6)])
+
+        for (var marker of visibleMarkers) {
+            var price = marker.prices[overlay_name];
+            var setted = false;
+            for (var quantile in quantiles) {
+                if (price <= quantiles[quantile]) {
+                   marker.setIcon(icons[quantile]);
+                   setted = true;
+                   break;
+                }
+            }
+            if (!setted) marker.setIcon(icons[5]);
+        }
+    });
+
+    L.Control.DynamicCheckBox = L.Control.extend({
+        input: undefined,
+        onAdd: function(map) {
+            input = L.DomUtil.create('input');
+            input.type = "checkbox";
+            input.name = "DynamicRange";
+            L.DomEvent.on(input, 'click', function() {dynamic = input.checked});
+            return input;
+        },
+    
+        onRemove: function(map) {
+            L.DomEvent.off(input);
+        }
+    });
+    
+    L.control.dynamicCheckBox = function(opts) {
+        return new L.Control.DynamicCheckBox(opts);
+    }
 
     L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
     L.control.scale().addTo(map);
+    L.control.dynamicCheckBox({ position: 'topleft' }).addTo(map);
+
 
   </script>
 
