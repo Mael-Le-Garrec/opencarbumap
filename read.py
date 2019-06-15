@@ -146,12 +146,23 @@ def parse_xml(filename):
             addressPoints.append(addressPoint)
             price_list.append(fuels)
 
-    reject_outliers_prices(addressPoints)
+    fuelPrices = reject_outliers_prices(addressPoints)
+    give_quantile(addressPoints, fuelPrices)
 
     output.write_markers(addressPoints)
     output.write_fuels(price_list)
 
     points.get_averages()
+
+def give_quantile(addressPoints, fuelPrices):
+    quantiles = dict()
+    for fuelId, prices in iter(fuelPrices.items()):
+        quantiles[fuelId] = np.quantile(prices, [(n+1)/6 for n in range(5)])
+
+    for address in addressPoints:
+        address.append(dict())
+        for fuelId, price in iter(address[3].items()):
+            address[4][fuelId] = int(np.searchsorted(quantiles[fuelId], price))
 
 def reject_outliers_prices(addressPoints, reject_factor=10):
     """ Filter outliers price from addressPoints using standard
@@ -188,6 +199,19 @@ def reject_outliers_prices(addressPoints, reject_factor=10):
                              address[3][fuelId], fuelMeanStd[fuelId]['mean'], fuelMeanStd[fuelId]['std'])
                 # remove the entry
                 del address[3][fuelId]
+
+    fuelPrices = {}
+    for address in addressPoints:
+        for fuelId, price in iter(address[3].items()):
+            if not fuelId in fuelPrices:
+                fuelPrices[fuelId] = [price] # first entry
+            else:
+                fuelPrices[fuelId].append(price)
+
+    for fuelId, prices in iter(fuelPrices.items()):
+                logging.info('%s prices: min: %f, max: %f', fuelId, np.min(prices), np.max(prices))
+
+    return fuelPrices
 
 if __name__ == "__main__":
     parse_xml("data.xml")

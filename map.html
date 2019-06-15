@@ -37,7 +37,7 @@
         }), latlng = L.latLng(46, 5.2);
 
     var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
-    var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'violet', 'grey', 'black'];
+    var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
         icons[i] = L.icon({
@@ -67,6 +67,7 @@
       var a = addressPoints[i];
       var city = a[2];
       var prices = a[3];
+      var quantiles = a[4];
       var title = city;
 
       for (var j in a[3]) {
@@ -75,11 +76,7 @@
 
       for (var fuel_name in a[3]) {
         var price = a[3][fuel_name];
-        var index = (price - fuels[fuel_name]['min']) * iconColors.length / (fuels[fuel_name]['max'] - fuels[fuel_name]['min']);
-        /* Sometimes rounding screw us */
-        if (index > iconColors.length-1) {
-          index = iconColors.length-1;
-        }
+        var index = a[4][fuel_name];
 
         var marker = L.marker(new L.LatLng(a[0], a[1]), { title: city, icon: icons[Math.floor(index)]});
         marker.bindPopup(title);
