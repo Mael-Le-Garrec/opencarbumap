@@ -47,25 +47,8 @@
     L.control.checkBox = function(opts) {
         return new L.Control.CheckBox(opts);
     }
-  </script>
-</head>
 
-<body>
-
-  <!-- Fork me on github -->
-  <a href="https://github.com/Hatrix42/opencarbumap"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
-  <div id="map"></div>
-
-  <script type="text/javascript">
-    // Background tiles
-    var tiles = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
-        {
-          type: 'map',
-          maxZoom: 19,
-          minZoom: 2,
-        }), latlng = L.latLng(46, 5.2);
-
-    // Create icons for makers
+    // Create icons for markers
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
@@ -79,93 +62,111 @@
         });
     }
 
+  </script>
+</head>
 
-    // Initialize Layers for each fuel
-    var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
-    var overlayMaps = {};
-    for (var idx in fuel_list) {
-        var markers = L.markerClusterGroup({
-            removeOutsideVisibleBounds: true,
-            disableClusteringAtZoom: 11,
-            maxClusterRadius: 60
-        });
-        overlayMaps[fuel_list[idx]] = markers;
-    }
+<body>
 
-    for (var i = 0; i < addressPoints.length; i++) {
-      var a = addressPoints[i];
-      var city = a[2];
-      var prices = a[3];
-      var title = city;
+  <!-- Fork me on github -->
+  <a href="https://github.com/Hatrix42/opencarbumap"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+  <div id="map"></div>
 
-      for (var j in a[3]) {
-        title = title + '<br>' + j + ": " + a[3][j].toFixed(3) + " €/Litre";
-      }
-
-      for (var fuel_name in a[3]) {
-        var price = a[3][fuel_name];
-
-        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: city, icon: icons[0]});
-        marker.bindPopup(title);
-        overlayMaps[fuel_name].addLayer(marker);
-        marker.prices = prices;
-      }
-
-    }
-
-    var map = L.map('map', {
-        center: latlng, 
-        zoom: 6, 
-        layers: [tiles, overlayMaps["Gazole"]]
-    });
-
-    var dynamic = false;
-    map.on('onCheckbox-dynamic', function() { dynamic = true; });
-    map.on('offCheckbox-dynamic', function() { dynamic = false; });
-    map.on('moveend baselayerchange onCheckbox-dynamic offCheckbox-dynamic', function(e) {
-        var overlay_name = "";
+  <script type="text/javascript">
+    function findCurrentLayer(map, overlayMaps) {
         for (var name in overlayMaps) {
             if (map.hasLayer(overlayMaps[name])) {
-                overlay_name = name;
-                break;
+                return overlayMaps[name];
             }
         }
+    }
 
+    function colorizeMarkers(layer, dynamic, bounds) {
         var visibleMarkers = [];
-        var bounds = map.getBounds()
-        overlayMaps[overlay_name].eachLayer(function(marker) {
+        layer.eachLayer(function(marker) {
             if (!dynamic || bounds.contains(marker.getLatLng())) {
                 visibleMarkers.push(marker);
             }
         });
 
-        var prices = [];
-        for (var marker of visibleMarkers) {
-            prices.push(marker.prices[overlay_name]);
-        }
+        // Get all prices for a specific fuel
+        var prices = [...visibleMarkers].map(x => x.prices[layer.name]);
+        // Get the 6 quantiles for this range of prices
+        var quantiles = math.quantileSeq(prices, [...[...Array(5).keys()].map(x => (x+1) / 6)]);
 
-        var quantiles = math.quantileSeq(prices, [...[...Array(5).keys()].map(x => (x+1) / 6)])
-
+        // Set the color following quantiles
         for (var marker of visibleMarkers) {
-            var price = marker.prices[overlay_name];
             var setted = false;
-            for (var quantile in quantiles) {
-                if (price <= quantiles[quantile]) {
-                   marker.setIcon(icons[quantile]);
-                   setted = true;
-                   break;
+            for (var index in quantiles) {
+                if (marker.prices[layer.name] <= quantiles[index]) {
+                    marker.setIcon(icons[index]);
+                    setted = true;
+                    break;
                 }
             }
             if (!setted) marker.setIcon(icons[5]);
         }
+    }
+
+    function initializeMarkers(map) {
+        // Initialize Layers for each fuel
+        var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
+        var overlayMaps = {};
+        for (var idx in fuel_list) {
+            var markers = L.markerClusterGroup({
+                removeOutsideVisibleBounds: true,
+                disableClusteringAtZoom: 11,
+                maxClusterRadius: 60
+            });
+            markers.name = fuel_list[idx];
+            overlayMaps[fuel_list[idx]] = markers;
+        }
+
+        // Create markers with pop-up
+        for (var index in addressPoints) {
+            var lat = addressPoints[index][0];
+            var lng = addressPoints[index][1];
+            var city = addressPoints[index][2];
+            var prices = addressPoints[index][3];
+            var title = city;
+
+            for (var fuel_name in prices) {
+                title = title + '<br>' + fuel_name + ": " + prices[fuel_name].toFixed(3) + " €/Litre";
+                var marker = L.marker(new L.LatLng(lat, lng), {title: city});
+                marker.bindPopup(title);
+                overlayMaps[fuel_name].addLayer(marker);
+                marker.prices = prices;
+            }
+        }
+
+        return overlayMaps;
+    }
+
+    // Background tiles
+    var tiles = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
+        {
+          type: 'map',
+          maxZoom: 19,
+          minZoom: 2,
+        });
+
+    var map = L.map('map', {
+        center: L.latLng(46, 5.2),
+        zoom: 6, 
+        layers: [tiles]
     });
-
-
+    var overlayMaps = initializeMarkers(map);
+    map.addLayer(overlayMaps["Gazole"]);
     L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
     L.control.scale().addTo(map);
+
+    var dynamic = false;
+    map.on('onCheckbox-dynamic', function() { dynamic = true; });
+    map.on('offCheckbox-dynamic', function() { dynamic = false; });
+    map.on('load moveend baselayerchange onCheckbox-dynamic offCheckbox-dynamic', function() {
+        var layer = findCurrentLayer(map, overlayMaps);
+        colorizeMarkers(layer, dynamic, map.getBounds());
+    });
     L.control.checkBox({name: 'dynamic', label: 'Colored dynamically'}).addTo(map);
-
-
   </script>
 </body>
 </html>
