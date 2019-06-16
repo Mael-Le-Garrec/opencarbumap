@@ -1,4 +1,2 @@
-shapely
-utm
 lxml
 numpy

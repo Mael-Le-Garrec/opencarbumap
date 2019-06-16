@@ -3,14 +3,11 @@
 import os
 import sys
 import os.path
-from shapely.geometry import shape, Point
 from datetime import datetime, timedelta
 from lxml import etree
 import json
 import numpy as np
 import logging
-
-import utm
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -59,9 +56,7 @@ def check_price(prices, node):
     pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%dT%H:%M:%S")
     
     if pdv_date + two_weeks > now:
-        price = float(node.get('valeur')) / 1000
-        if node.get('valeur') != '1000' and price > 0.10:
-            prices[node.get('nom')] = price
+        prices[node.get('nom')] = float(node.get('valeur')) / 1000
 
 
 def get_children(pdv):
@@ -81,40 +76,9 @@ def get_children(pdv):
 
     return prices, city, sold_out
 
-class Points():
-
-    class Coords():
-        def __init__(self, point, pdv_id):
-            self.point = point
-            self.pdv_id = pdv_id
-
-    coords = []
-
-    def __init__(self, filename='departements.json'):
-        self.filename = filename
-        self.open_data()
-
-
-    def open_data(self):
-        self.data = open(self.filename)
-        self.data = json.load(self.data)[0]
-
-
-    def add_point(self, point, pdv_id):
-        self.coords.append(self.Coords(Point(*point), pdv_id))
-
-
-    def get_averages(self):
-        # check each polygon to see if it contains the point
-        for i, feature in enumerate(self.data['features']):
-            for coord in self.coords:
-                polygon = shape(feature['geometry'])
-                if polygon.contains(coord.point):
-                    print('Point {} is inside {}'.format(coord.point, feature))
 
 def parse_xml(filename):
     output = JsData()
-    points = Points()
 
     tree = etree.parse(filename)
     addressPoints = []
@@ -137,8 +101,6 @@ def parse_xml(filename):
     fuelPrices = reject_outliers_prices(addressPoints)
 
     output.write_markers(addressPoints)
-
-    points.get_averages()
 
 def reject_outliers_prices(addressPoints, reject_factor=10):
     """ Filter outliers price from addressPoints using standard

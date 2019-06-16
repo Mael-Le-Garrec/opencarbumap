@@ -17,24 +17,55 @@
   <style>
     #map{ width: 100%; height: 100%; }
   </style>
+
+  <script type="text/javascript">
+    // A custom Control to show a checkbox
+    L.Control.CheckBox = L.Control.extend({
+        options: {
+            position: 'topleft',
+            checked: false,
+            name: 'checkbox',
+            label: 'CheckBox'
+        },
+        initialize: function(options) {
+          L.Util.setOptions(this, options)
+        },
+        onAdd: function(map) {
+            var div = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+            var input = L.DomUtil.create('input', '', div);
+            input.type = 'checkbox';
+            input.checked = this.options.checked;
+            var label = L.DomUtil.create('span', '', div);
+            label.innerHTML = this.options.label;
+            
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+            L.DomEvent.on(input, 'click', function() { input.checked ? map.fire('onCheckbox-' + this.options.name) : map.fire('offCheckbox-' + this.options.name); }, this);
+            return div;
+        },
+    });
+    L.control.checkBox = function(opts) {
+        return new L.Control.CheckBox(opts);
+    }
+  </script>
 </head>
 
 <body>
 
+  <!-- Fork me on github -->
   <a href="https://github.com/Hatrix42/opencarbumap"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   <div id="map"></div>
 
   <script type="text/javascript">
-
-   var dynamic = false;
-   var tiles = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
+    // Background tiles
+    var tiles = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
         {
           type: 'map',
           maxZoom: 19,
           minZoom: 2,
         }), latlng = L.latLng(46, 5.2);
 
-    var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
+    // Create icons for makers
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'black'];
     var icons = {};
     for (var i = 0; i < iconColors.length; i++) {
@@ -48,15 +79,17 @@
         });
     }
 
+
     // Initialize Layers for each fuel
+    var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
     var overlayMaps = {};
-    for (var i = 0; i < fuel_list.length; i++) {
-      var markers = L.markerClusterGroup({
-        removeOutsideVisibleBounds: true,
-        disableClusteringAtZoom: 11,
-        maxClusterRadius: 60
-      });
-      overlayMaps[fuel_list[i]] = markers;
+    for (var idx in fuel_list) {
+        var markers = L.markerClusterGroup({
+            removeOutsideVisibleBounds: true,
+            disableClusteringAtZoom: 11,
+            maxClusterRadius: 60
+        });
+        overlayMaps[fuel_list[idx]] = markers;
     }
 
     for (var i = 0; i < addressPoints.length; i++) {
@@ -86,7 +119,10 @@
         layers: [tiles, overlayMaps["Gazole"]]
     });
 
-    map.on('moveend overlayadd', function(e) {
+    var dynamic = false;
+    map.on('onCheckbox-dynamic', function() { dynamic = true; });
+    map.on('offCheckbox-dynamic', function() { dynamic = false; });
+    map.on('moveend baselayerchange onCheckbox-dynamic offCheckbox-dynamic', function(e) {
         var overlay_name = "";
         for (var name in overlayMaps) {
             if (map.hasLayer(overlayMaps[name])) {
@@ -102,7 +138,7 @@
                 visibleMarkers.push(marker);
             }
         });
-        
+
         var prices = [];
         for (var marker of visibleMarkers) {
             prices.push(marker.prices[overlay_name]);
@@ -124,32 +160,12 @@
         }
     });
 
-    L.Control.DynamicCheckBox = L.Control.extend({
-        input: undefined,
-        onAdd: function(map) {
-            input = L.DomUtil.create('input');
-            input.type = "checkbox";
-            input.name = "DynamicRange";
-            L.DomEvent.on(input, 'click', function() {dynamic = input.checked});
-            return input;
-        },
-    
-        onRemove: function(map) {
-            L.DomEvent.off(input);
-        }
-    });
-    
-    L.control.dynamicCheckBox = function(opts) {
-        return new L.Control.DynamicCheckBox(opts);
-    }
 
     L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
     L.control.scale().addTo(map);
-    L.control.dynamicCheckBox({ position: 'topleft' }).addTo(map);
+    L.control.checkBox({name: 'dynamic', label: 'Colored dynamically'}).addTo(map);
 
 
   </script>
-
-
 </body>
 </html>
