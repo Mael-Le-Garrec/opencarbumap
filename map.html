@@ -128,10 +128,18 @@
             var lng = addressPoints[index][1];
             var city = addressPoints[index][2];
             var prices = addressPoints[index][3];
-            var title = city;
+            var brand = addressPoints[index][4];
+            var title;
+            if (brand) {
+                title = brand + '<br>' + city;
+            } else {
+                title = city;
+            }
 
             for (var fuel_name in prices) {
                 title = title + '<br>' + fuel_name + ": " + prices[fuel_name].toFixed(3) + " €/Litre";
+            }
+            for (var fuel_name in prices) {
                 var marker = L.marker(new L.LatLng(lat, lng), {title: city});
                 marker.bindPopup(title);
                 overlayMaps[fuel_name].addLayer(marker);

@@ -11,6 +11,26 @@ import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+def get_stations():
+    with open('stations.json') as h:
+        j = json.load(h)
+    stations = dict()
+    for h in j['elements']:
+        id = h['tags']['ref:FR:prix-carburants']
+        name = h['tags'].get('name')
+        if name is None:
+            name = h['tags'].get('brand')
+        if name is None:
+            name = h['tags'].get('operator')
+        lat = h.get('lat')
+        lon = h.get('lon')
+        if lat is None:
+            lat = h['center']['lat']
+        if lon is None:
+            lon = h['center']['lon']
+        stations[id] = {'name': name, 'lat': lat, 'lon': lon}
+    return stations
+
 class Data():
     fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
 
@@ -27,7 +47,10 @@ class JsData():
         handle.write(text)
         handle.close()
 
-def get_coords(pdv):
+def get_coords(pdv, stations):
+    id = get_id(pdv)
+    if id in stations:
+        return stations[id]['lat'], stations[id]['lon'], stations[id]['name']
     try:
         latitude = float(pdv.get('latitude'))
         longitude = float(pdv.get('longitude'))
@@ -43,7 +66,7 @@ def get_coords(pdv):
     except:
         latitude, longitude = '', ''
 
-    return latitude, longitude
+    return latitude, longitude, None
 
 
 def get_id(pdv):
@@ -84,10 +107,12 @@ def parse_xml(filename):
     addressPoints = []
     price_list = []
 
+    stations = get_stations()
+
     for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         addressPoint = []
-        latitude, longitude = get_coords(pdv)
         pdv_id = get_id(pdv)
+        latitude, longitude, brand = get_coords(pdv, stations)
         fuels, city, sold_out = get_children(pdv)
 
         if latitude and longitude and fuels:
@@ -95,6 +120,7 @@ def parse_xml(filename):
             addressPoint.append(longitude)
             addressPoint.append(city)
             addressPoint.append(fuels)
+            addressPoint.append(brand)
             addressPoints.append(addressPoint)
             price_list.append(fuels)
 
