@@ -76,10 +76,12 @@ def get_id(pdv):
 def check_price(prices, node):
     two_weeks = timedelta(14)
     now = datetime.now()
-    pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%dT%H:%M:%S")
+    pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%d %H:%M:%S")
     
+    # if file is hourly we should not divide by 1000
+    # otherwise yes
     if pdv_date + two_weeks > now:
-        prices[node.get('nom')] = float(node.get('valeur')) / 1000
+        prices[node.get('nom')] = float(node.get('valeur'))
 
 
 def get_children(pdv):
