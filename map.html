@@ -17,6 +17,16 @@
 
   <style>
     #map{ width: 100%; height: 100%; }
+
+    table{
+      font-size: small;
+      border-spacing: 10px 2px;
+    }
+
+    .thupdate{
+      white-space: nowrap;
+    }
+
   </style>
 
   <script type="text/javascript">
@@ -129,16 +139,39 @@
             var city = addressPoints[index][2];
             var prices = addressPoints[index][3];
             var brand = addressPoints[index][4];
+            var remark = addressPoints[index][5]
             var title;
+
+            // Check brand
             if (brand) {
-                title = brand + '<br>' + city;
+                  title = '<b>' + brand + '</b>' + '<br>' + city;
             } else {
                 title = city;
             }
+            title += "<br>";
 
+            // Check remark
+            remark = remark ? remark : "";
+            
+            // Create a table for the prices, so it's more pleasant to look at
+            title += "<table>"
+            title += "<thead><tr>"
+            if (remark)
+              title += "<th>Type</th><th>Prix</th><th class='thupdate' >Dernière MàJ</th>"
+            else
+              title += "<th>Type</th><th>Prix</th>"
+            title += "</tr></thead>"
+            title += "<tbody>"
             for (var fuel_name in prices) {
-                title = title + '<br>' + fuel_name + ": " + prices[fuel_name].toFixed(3) + " €/Litre";
+                  title += "<tr><td>" + fuel_name + "</td><td>" + prices[fuel_name].toFixed(3) + "€/L </td>";
+
+                  if (remark)
+                    title += "<td class='thupdate'>" + remark + "</td>";
+                  title += "</tr>";
             }
+            title += "</tbody>"
+            title += "</table>"
+
             for (var fuel_name in prices) {
                 var marker = L.marker(new L.LatLng(lat, lng), {title: city});
                 marker.bindPopup(title);

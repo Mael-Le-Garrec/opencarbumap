@@ -73,25 +73,30 @@ def get_id(pdv):
     return pdv.get('id')
 
 
-def check_price_update(prices, node, delta={'days':30}):
+def check_price_update(prices, node, delta={'days':14}):
     time_delta = timedelta(**delta)
     now = datetime.now()
     pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%d %H:%M:%S")
     
-    # If the last update was before <time_delta>, do not include it
-    if pdv_date + time_delta > now:
-        prices[node.get('nom')] = float(node.get('valeur'))
+    # If the last update was before <time_delta>, return a warning
+    prices[node.get('nom')] = float(node.get('valeur'))
+
+    if pdv_date + time_delta < now:
+        d = node.get('maj').split(' ')[0]
+        return d
+    return None
 
 
 def get_children(pdv):
     prices = {}
     sold_out = []
     city = ''
+    remark = None
 
     for child in pdv.getchildren():
         # Check that the last update wasn't too long ago
         if child.tag == "prix":
-            check_price_update(prices, child)
+            remark = check_price_update(prices, child)
 
         if child.tag == "rupture":
             sold_out.append(child.get('nom'))
@@ -99,7 +104,7 @@ def get_children(pdv):
         if child.tag == "ville":
             city = child.text.title() if child.text else None # Sometimes ville is empty
 
-    return prices, city, sold_out
+    return prices, city, sold_out, remark
 
 
 def parse_xml(filename):
@@ -115,7 +120,7 @@ def parse_xml(filename):
         addressPoint = []
         pdv_id = get_id(pdv)
         latitude, longitude, brand = get_coords(pdv, stations)
-        fuels, city, sold_out = get_children(pdv)
+        fuels, city, sold_out, remark = get_children(pdv)
 
         if latitude and longitude and fuels:
             addressPoint.append(latitude)
@@ -123,12 +128,14 @@ def parse_xml(filename):
             addressPoint.append(city)
             addressPoint.append(fuels)
             addressPoint.append(brand)
+            addressPoint.append(remark)
+
             addressPoints.append(addressPoint)
             price_list.append(fuels)
 
-    fuelPrices = reject_outliers_prices(addressPoints)
-
+    reject_outliers_prices(addressPoints)
     output.write_markers(addressPoints)
+
 
 def reject_outliers_prices(addressPoints, reject_factor=10):
     """ Filter outliers price from addressPoints using standard
