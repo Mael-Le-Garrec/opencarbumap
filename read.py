@@ -73,14 +73,13 @@ def get_id(pdv):
     return pdv.get('id')
 
 
-def check_price(prices, node):
-    two_weeks = timedelta(14)
+def check_price_update(prices, node, delta={'days':30}):
+    time_delta = timedelta(**delta)
     now = datetime.now()
     pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%d %H:%M:%S")
     
-    # if file is hourly we should not divide by 1000
-    # otherwise yes
-    if pdv_date + two_weeks > now:
+    # If the last update was before <time_delta>, do not include it
+    if pdv_date + time_delta > now:
         prices[node.get('nom')] = float(node.get('valeur'))
 
 
@@ -90,8 +89,9 @@ def get_children(pdv):
     city = ''
 
     for child in pdv.getchildren():
+        # Check that the last update wasn't too long ago
         if child.tag == "prix":
-            check_price(prices, child)
+            check_price_update(prices, child)
 
         if child.tag == "rupture":
             sold_out.append(child.get('nom'))
