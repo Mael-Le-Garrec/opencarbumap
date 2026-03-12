@@ -13,10 +13,15 @@
 
   <script src="./json/address_points.js"></script>
 
-  <meta charset=utf-8>
-
   <style>
-    #map{ width: 100%; height: 100%; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map{ width: 100%; height: 100%; }
 
     table{
       font-size: small;
@@ -53,9 +58,9 @@
   </style>
 
   <script type="text/javascript">
-    // Function to update the URI with parameters
-  function UpdateQueryString(key, value, url) {
-    if (!url) url = window.location.href;
+    // Update or remove a query parameter while preserving hash fragments.
+    function updateQueryString(key, value, url) {
+        if (!url) url = window.location.href;
       var re = new RegExp("([?&])" + key + "=.*?(&|#|$)(.*)", "gi"),
           hash;
 
@@ -88,7 +93,7 @@
       }
     }
 
-    // A custom Control to show a checkbox
+    // Small custom control used to toggle dynamic coloring.
     L.Control.CheckBox = L.Control.extend({
         options: {
             position: 'topleft',
@@ -115,7 +120,7 @@
     });
     L.control.checkBox = function(opts) {
         return new L.Control.CheckBox(opts);
-    }
+    };
 
     // Create icons for markers
     var iconColors = ['blue', 'green', 'yellow', 'orange', 'red', 'black'];
@@ -151,6 +156,10 @@
     }
 
     function colorizeMarkers(layer, dynamic, bounds) {
+        if (!layer) {
+            return;
+        }
+
         var visibleMarkers = [];
         layer.eachLayer(function(marker) {
             if (!dynamic || bounds.contains(marker.getLatLng())) {
@@ -158,22 +167,26 @@
             }
         });
 
+        if (!visibleMarkers.length) {
+            return;
+        }
+
         // Get all prices for a specific fuel
         var prices = [...visibleMarkers].map(x => x.prices[layer.name]);
         // Get the 6 quantiles for this range of prices
-        var quantiles = math.quantileSeq(prices, [...[...Array(5).keys()].map(x => (x+1) / 6)]);
+        var quantiles = math.quantileSeq(prices, [1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6]);
 
         // Set the color following quantiles
         for (var marker of visibleMarkers) {
-            var setted = false;
+            var iconSet = false;
             for (var index in quantiles) {
                 if (marker.prices[layer.name] <= quantiles[index]) {
                     marker.setIcon(icons[index]);
-                    setted = true;
+                    iconSet = true;
                     break;
                 }
             }
-            if (!setted) marker.setIcon(icons[5]);
+            if (!iconSet) marker.setIcon(icons[5]);
         }
     }
 
@@ -204,11 +217,11 @@
         });
 
         if (visibleCount === 0) {
-            box.textContent = layer.name + ': no visible station in current view';
+            box.innerHTML = "<center>" + layer.name + ': no visible station in current view</center>';
             return;
         }
 
-        box.textContent = layer.name + ' visible prices - min: ' + minPrice.toFixed(3) + '€/L, max: ' + maxPrice.toFixed(3) + '€/L';
+        box.innerHTML = "<center>" + layer.name + ' visible prices <br> min: ' + minPrice.toFixed(3) + '€/L, max: ' + maxPrice.toFixed(3) + '€/L</center>';
     }
 
     function initializeMarkers(map, fuel_list) {
@@ -231,7 +244,7 @@
             var city = addressPoints[index][2];
             var prices = addressPoints[index][3];
             var brand = addressPoints[index][4];
-            var remark = addressPoints[index][5]
+            var remark = addressPoints[index][5];
             var title;
 
             // Check brand
@@ -267,11 +280,12 @@
             for (var fuel_name in prices) {
                 var marker = L.marker(new L.LatLng(lat, lng), {title: city});
                 marker.bindPopup(title);
-                overlayMaps[fuel_name].addLayer(marker);
+                if (overlayMaps[fuel_name]) {
+                    overlayMaps[fuel_name].addLayer(marker);
+                }
                 marker.prices = prices;
             }
         }
-
         return overlayMaps;
     }
 
@@ -301,17 +315,26 @@
             position: 'topleft',
             collapsed: false
         }).addTo(map);
-    var gasControlContainer = gasControl.getContainer();
-    var gasControlList = gasControlContainer.querySelector('.leaflet-control-layers-list');
-    var gasControlTitle = L.DomUtil.create('div', 'gas-control-title');
-    gasControlTitle.textContent = 'Gas';
-    gasControlContainer.insertBefore(gasControlTitle, gasControlList);
+        var gasControlContainer = gasControl.getContainer();
+        var gasControlList = gasControlContainer.querySelector('.leaflet-control-layers-list');
+        var gasControlTitle = L.DomUtil.create('div', 'gas-control-title');
+        gasControlTitle.textContent = 'Gas';
+        if (gasControlList) {
+            gasControlContainer.insertBefore(gasControlTitle, gasControlList);
+        } else {
+            gasControlContainer.appendChild(gasControlTitle);
+        }
     L.control.scale().addTo(map);
 
     // The gas can be passed in the URI, check if we've got it
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    var selectedGas = JSON.parse(urlParams.get('gas'));
+        var selectedGas = null;
+        try {
+            selectedGas = JSON.parse(urlParams.get('gas'));
+        } catch (e) {
+            selectedGas = null;
+        }
     if (selectedGas in overlayMaps){
       var currentLayer = findCurrentLayer(map, overlayMaps);
       map.removeLayer(currentLayer);
@@ -324,16 +347,19 @@
       
     // Update the URI with the selected gas when the layer change, i.e. a different gas is selected
     map.on('baselayerchange', function() {
-      var layerName = findCurrentLayer(map, overlayMaps).name;
-      var params = encodeURIComponent(JSON.stringify(layerName));
-      var newUrl = UpdateQueryString('gas', params);
-      history.pushState({}, null, newUrl);
+        var layerName = findCurrentLayer(map, overlayMaps).name;
+        var params = encodeURIComponent(JSON.stringify(layerName));
+        var newUrl = updateQueryString('gas', params);
+        history.pushState({}, null, newUrl);
     });
 
     map.on('load moveend baselayerchange onCheckbox-dynamic offCheckbox-dynamic', function() {
         var layer = findCurrentLayer(map, overlayMaps);
+        if (!layer) {
+            return;
+        }
         colorizeMarkers(layer, dynamic, map.getBounds());
-                updateVisiblePriceRange(layer, map.getBounds());
+        updateVisiblePriceRange(layer, map.getBounds());
     });
     L.control.checkBox({name: 'dynamic', label: 'Colored dynamically'}).addTo(map);
 
