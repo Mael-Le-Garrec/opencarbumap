@@ -27,6 +27,29 @@
       white-space: nowrap;
     }
 
+    .leaflet-popup-content {
+        min-width: 130px;
+    }
+
+    #price-range-box {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #cfcfcf;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .gas-control-title {
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
   </style>
 
   <script type="text/javascript">
@@ -116,6 +139,7 @@
   <!-- Fork me on github -->
   <a href="https://github.com/Hatrix42/opencarbumap"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   <div id="map"></div>
+    <div id="price-range-box">Loading visible prices...</div>
 
   <script type="text/javascript">
     function findCurrentLayer(map, overlayMaps) {
@@ -151,6 +175,40 @@
             }
             if (!setted) marker.setIcon(icons[5]);
         }
+    }
+
+    // Display the min/max prices for the currently visible stations in the selected fuel layer.
+    function updateVisiblePriceRange(layer, bounds) {
+        var minPrice = Infinity;
+        var maxPrice = -Infinity;
+        var visibleCount = 0;
+        var box = document.getElementById('price-range-box');
+
+        if (!box || !layer) {
+            return;
+        }
+
+        layer.eachLayer(function(marker) {
+            if (!bounds.contains(marker.getLatLng())) {
+                return;
+            }
+
+            var price = marker.prices[layer.name];
+            if (typeof price !== 'number' || isNaN(price)) {
+                return;
+            }
+
+            visibleCount += 1;
+            if (price < minPrice) minPrice = price;
+            if (price > maxPrice) maxPrice = price;
+        });
+
+        if (visibleCount === 0) {
+            box.textContent = layer.name + ': no visible station in current view';
+            return;
+        }
+
+        box.textContent = layer.name + ' visible prices - min: ' + minPrice.toFixed(3) + '€/L, max: ' + maxPrice.toFixed(3) + '€/L';
     }
 
     function initializeMarkers(map, fuel_list) {
@@ -230,6 +288,8 @@
     var map = L.map('map', {
         center: L.latLng(46, 5.2),
         zoom: 6, 
+        zoomDelta: 1,
+        wheelPxPerZoomLevel: 120,
         layers: [tiles]
     });
 
@@ -237,7 +297,15 @@
     var fuel_list = ['E10', 'E85', 'GPLc', 'Gazole', 'SP95', 'SP98'];
     var overlayMaps = initializeMarkers(map, fuel_list);
     map.addLayer(overlayMaps["Gazole"]);
-    L.control.layers(overlayMaps, null, {position: 'topleft'}).addTo(map);
+        var gasControl = L.control.layers(overlayMaps, null, {
+            position: 'topleft',
+            collapsed: false
+        }).addTo(map);
+    var gasControlContainer = gasControl.getContainer();
+    var gasControlList = gasControlContainer.querySelector('.leaflet-control-layers-list');
+    var gasControlTitle = L.DomUtil.create('div', 'gas-control-title');
+    gasControlTitle.textContent = 'Gas';
+    gasControlContainer.insertBefore(gasControlTitle, gasControlList);
     L.control.scale().addTo(map);
 
     // The gas can be passed in the URI, check if we've got it
@@ -265,8 +333,13 @@
     map.on('load moveend baselayerchange onCheckbox-dynamic offCheckbox-dynamic', function() {
         var layer = findCurrentLayer(map, overlayMaps);
         colorizeMarkers(layer, dynamic, map.getBounds());
+                updateVisiblePriceRange(layer, map.getBounds());
     });
     L.control.checkBox({name: 'dynamic', label: 'Colored dynamically'}).addTo(map);
+
+    // Initial stats render before the first interaction event.
+    var initialLayer = findCurrentLayer(map, overlayMaps);
+    updateVisiblePriceRange(initialLayer, map.getBounds());
   </script>
 </body>
 </html>
