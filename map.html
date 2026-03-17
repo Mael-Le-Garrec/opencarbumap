@@ -277,13 +277,14 @@
             title += "</tbody>"
             title += "</table>"
 
+            var marker = L.marker(new L.LatLng(lat, lng), {title: city});
+            marker.bindPopup(title);
+            marker.prices = prices;
+
             for (var fuel_name in prices) {
-                var marker = L.marker(new L.LatLng(lat, lng), {title: city});
-                marker.bindPopup(title);
                 if (overlayMaps[fuel_name]) {
                     overlayMaps[fuel_name].addLayer(marker);
                 }
-                marker.prices = prices;
             }
         }
         return overlayMaps;
