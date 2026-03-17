@@ -8,7 +8,7 @@ This project uses the daily (*jour*) file.
 
 ## Example map
 
-Here is an example map: https://hatrix.fr/maps/opencarbumap/map.html
+Here is an example map: https://maps.hatrix.fr/opencarbumap/map.html
 
 ## Install
 
