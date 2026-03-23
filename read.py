@@ -114,7 +114,7 @@ def parse_xml(filename):
 
     stations = get_stations()
 
-    for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
+    for pdv in tree.xpath('/pdv_liste/pdv'):
         addressPoint = []
         latitude, longitude, brand = get_coords(pdv, stations)
         fuels, city, sold_out, remark = get_children(pdv)
