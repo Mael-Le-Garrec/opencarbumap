@@ -33,10 +33,6 @@ def get_stations():
     return stations
 
 
-class Data():
-    fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
-
-
 class JsData():
     def __init__(self):
         self.directory = "json"
