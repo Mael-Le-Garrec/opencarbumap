@@ -93,7 +93,7 @@ def get_children(pdv):
     city = ''
     remark = None
 
-    for child in pdv.getchildren():
+    for child in pdv:
         # Check that the last update wasn't too long ago
         if child.tag == "prix":
             remark = check_price_update(prices, child)
