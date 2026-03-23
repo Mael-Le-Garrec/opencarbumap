@@ -41,11 +41,9 @@ class JsData():
             os.mkdir(self.directory)
         
     def write_markers(self, addressPoints):
-        handle = open(os.path.join(self.directory, "address_points.js"), "w")
-        handle.write("var addressPoints=")
-        text = json.dumps(addressPoints, separators=(',', ':'))
-        handle.write(text)
-        handle.close()
+        with open(os.path.join(self.directory, "address_points.js"), "w") as h:
+            h.write("var addressPoints=")
+            json.dump(addressPoints, h, separators=(',', ':'))
 
 def get_coords(pdv, stations):
     id = get_id(pdv)
