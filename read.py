@@ -11,6 +11,7 @@ import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+
 def get_stations():
     with open('stations.json') as h:
         j = json.load(h)
@@ -31,19 +32,22 @@ def get_stations():
         stations[id] = {'name': name, 'lat': lat, 'lon': lon}
     return stations
 
+
 class Data():
     fuel_names = sorted(['Gazole', 'SP95', 'SP98', 'GPLc', 'E10', 'E85'])
+
 
 class JsData():
     def __init__(self):
         self.directory = "json"
         if not os.path.exists(self.directory):
             os.mkdir(self.directory)
-        
+
     def write_markers(self, addressPoints):
         with open(os.path.join(self.directory, "address_points.js"), "w") as h:
             h.write("var addressPoints=")
             json.dump(addressPoints, h, separators=(',', ':'))
+
 
 def get_coords(pdv, stations):
     id = get_id(pdv)
@@ -55,12 +59,12 @@ def get_coords(pdv, stations):
 
         # sometimes latitude and longitude are switch
         if latitude < longitude:
-          latitude, longitude = longitude, latitude
+            latitude, longitude = longitude, latitude
 
         # sometimes coordinate are already in WGS84
         if latitude > 100 or latitude < -100:
-          latitude = latitude / 100000
-          longitude = longitude / 100000
+            latitude = latitude / 100000
+            longitude = longitude / 100000
     except:
         latitude, longitude = '', ''
 
@@ -71,11 +75,11 @@ def get_id(pdv):
     return pdv.get('id')
 
 
-def check_price_update(prices, node, delta={'days':14}):
+def check_price_update(prices, node, delta={'days': 14}):
     time_delta = timedelta(**delta)
     now = datetime.now()
     pdv_date = datetime.strptime(node.get('maj'), "%Y-%m-%d %H:%M:%S")
-    
+
     # If the last update was before <time_delta>, return a warning
     prices[node.get('nom')] = float(node.get('valeur'))
 
@@ -100,7 +104,8 @@ def get_children(pdv):
             sold_out.append(child.get('nom'))
 
         if child.tag == "ville":
-            city = child.text.title() if child.text else None # Sometimes ville is empty
+            # Sometimes ville is empty
+            city = child.text.title() if child.text else None
 
     return prices, city, sold_out, remark
 
@@ -110,13 +115,11 @@ def parse_xml(filename):
 
     tree = etree.parse(filename)
     addressPoints = []
-    price_list = []
 
     stations = get_stations()
 
     for i, pdv in enumerate(tree.xpath('/pdv_liste/pdv')):
         addressPoint = []
-        pdv_id = get_id(pdv)
         latitude, longitude, brand = get_coords(pdv, stations)
         fuels, city, sold_out, remark = get_children(pdv)
 
@@ -129,7 +132,6 @@ def parse_xml(filename):
             addressPoint.append(remark)
 
             addressPoints.append(addressPoint)
-            price_list.append(fuels)
 
     reject_outliers_prices(addressPoints)
     output.write_markers(addressPoints)
@@ -149,8 +151,8 @@ def reject_outliers_prices(addressPoints, reject_factor=10):
     fuelPrices = {}
     for address in addressPoints:
         for fuelId, price in iter(address[3].items()):
-            if not fuelId in fuelPrices:
-                fuelPrices[fuelId] = [price] # first entry
+            if fuelId not in fuelPrices:
+                fuelPrices[fuelId] = [price]  # first entry
             else:
                 fuelPrices[fuelId].append(price)
 
@@ -170,6 +172,7 @@ def reject_outliers_prices(addressPoints, reject_factor=10):
                              address[3][fuelId], fuelMeanStd[fuelId]['mean'], fuelMeanStd[fuelId]['std'])
                 # remove the entry
                 del address[3][fuelId]
+
 
 if __name__ == "__main__":
     parse_xml("data.xml")
